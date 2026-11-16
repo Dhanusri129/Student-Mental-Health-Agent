@@ -307,8 +307,7 @@ elif page == "Assessment":
         st.divider()
         st.markdown("### 🧠 Basic questionnaire")
         st.caption(
-            "These are the original questionnaire fields used by the trained "
-            "model. They are retained to preserve the project's ML pipeline."
+            "These are the basic questionnaire fields,these will help to detect your current health status properly used by the trained "."
         )
         col3, col4 = st.columns(2)
         with col3:
