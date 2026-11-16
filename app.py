@@ -305,7 +305,7 @@ elif page == "Assessment":
             marital_input = st.selectbox("Marital Status", ["No", "Yes"])
 
         st.divider()
-        st.markdown("### 🧠 Existing project questionnaire")
+        st.markdown("### 🧠 Basic questionnaire")
         st.caption(
             "These are the original questionnaire fields used by the trained "
             "model. They are retained to preserve the project's ML pipeline."
