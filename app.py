@@ -94,3 +94,414 @@ st.markdown("""
     .hero h1 {
         color: #30265f;
         font-size: 2.25rem;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+    }
+
+    .hero p {
+        color: #5f5b7b;
+        font-size: 1.02rem;
+        margin: 0;
+    }
+
+    .section-heading {
+        color: #352b68;
+        font-weight: 750;
+        margin-top: 8px;
+    }
+
+    .soft-card {
+        background: rgba(255,255,255,0.88);
+        border: 1px solid #e8e4f7;
+        border-radius: 18px;
+        padding: 20px 22px;
+        box-shadow: 0 5px 18px rgba(66, 54, 120, 0.05);
+        margin-bottom: 14px;
+    }
+
+    .small-note {
+        color: #77738e;
+        font-size: 0.88rem;
+    }
+
+    div.stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        background: linear-gradient(90deg, #7561c9, #5688d9);
+        color: white;
+        border: 0;
+        border-radius: 12px;
+        min-height: 46px;
+        font-weight: 700;
+        width: 100%;
+    }
+
+    div.stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background: linear-gradient(90deg, #624eb5, #4175c7);
+        color: white;
+        border: 0;
+    }
+
+    div[data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #e8e4f7;
+        padding: 16px;
+        border-radius: 16px;
+    }
+
+    h1, h2, h3 {
+        color: #352b68;
+    }
+
+    .footer {
+        text-align: center;
+        color: #88839e;
+        padding: 18px 0 8px 0;
+        font-size: 0.85rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------------------------------------
+# SIDEBAR
+# -------------------------------------------------
+with st.sidebar:
+    st.markdown("## 🧠 MindCare")
+    st.caption("Student Mental Wellness Companion")
+    st.divider()
+    page = st.radio(
+        "NAVIGATION",
+        ["Home", "Assessment", "Insights", "Wellness Assistant", "About"],
+        label_visibility="visible"
+    )
+    st.divider()
+    st.caption("A student-focused awareness and prediction project.")
+    st.caption("This tool is not a medical diagnosis.")
+
+# -------------------------------------------------
+# HOME
+# -------------------------------------------------
+if page == "Home":
+    st.markdown("""
+    <div class="hero">
+        <h1>Welcome to MindCare 🌿</h1>
+        <p>A supportive space to reflect on student mental wellness.
+        Understand the project, complete the assessment, and explore the dataset insights.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### Your well-being matters")
+    st.write(
+        "Academic pressure, sleep changes and everyday challenges can affect "
+        "how students feel. MindCare provides a simple assessment experience "
+        "and general wellness suggestions."
+    )
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown('<div class="soft-card"><h3>📝 Assessment</h3><p>Complete the student information and mental-health questionnaire.</p></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="soft-card"><h3>📊 Insights</h3><p>Explore the depression and anxiety distributions in the project dataset.</p></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="soft-card"><h3>💬 Wellness support</h3><p>Get simple general suggestions related to stress, sleep and exams.</p></div>', unsafe_allow_html=True)
+
+    st.info("Start with **Assessment** from the sidebar when you are ready.")
+
+# -------------------------------------------------
+# ASSESSMENT
+# -------------------------------------------------
+elif page == "Assessment":
+    st.markdown("""
+    <div class="hero">
+        <h1>Student Assessment 📝</h1>
+        <p>Enter the details below. Complete all fields before submitting.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    with st.form("mental_health_assessment"):
+        st.markdown("### 👤 Personal information")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            name = st.text_input("Full Name")
+            gender_input = st.selectbox("Gender", ["Male", "Female"])
+            age = st.number_input("Age", min_value=17, max_value=35, value=20)
+            course_input = st.selectbox(
+                "Course",
+                [
+                    "BCS", "BIT", "Engineering", "KOE", "Kirkhs",
+                    "BENL", "CTS", "Biomedical Science", "Laws",
+                    "Islamic Education"
+                ]
+            )
+
+        with col2:
+            year_input = st.selectbox(
+                "Current Year",
+                ["year 1", "year 2", "year 3", "year 4"]
+            )
+            cgpa_input = st.number_input(
+                "CGPA (10 Point Scale)",
+                min_value=0.0,
+                max_value=10.0,
+                value=8.0,
+                step=0.1
+            )
+            marital_input = st.selectbox("Marital Status", ["No", "Yes"])
+
+        st.divider()
+        st.markdown("### 🩺 Mental health questions")
+        col3, col4 = st.columns(2)
+
+        with col3:
+            anxiety_input = st.selectbox("Do you have Anxiety?", ["No", "Yes"])
+
+        with col4:
+            panic_input = st.selectbox("Do you have Panic Attack?", ["No", "Yes"])
+
+        treatment_input = st.selectbox(
+            "Did you seek any specialist for treatment?",
+            ["No", "Yes"]
+        )
+
+        submitted = st.form_submit_button("🔍 Analyze My Assessment")
+
+    if submitted:
+        try:
+            # Keep the original project's CGPA conversion and encoding logic.
+            gpa = (cgpa_input / 10) * 4
+
+            if gpa < 2.0:
+                cgpa_range = "0 - 1.99"
+            elif gpa < 2.5:
+                cgpa_range = "2.00 - 2.49"
+            elif gpa < 3.0:
+                cgpa_range = "2.50 - 2.99"
+            elif gpa < 3.5:
+                cgpa_range = "3.00 - 3.49"
+            else:
+                cgpa_range = "3.50 - 4.00"
+
+            gender_encoded = encoders["Choose your gender"].transform([gender_input])[0]
+            course_encoded = encoders["What is your course?"].transform([course_input])[0]
+            year_encoded = encoders["Your current year of Study"].transform([year_input])[0]
+            cgpa_encoded = encoders["What is your CGPA?"].transform([cgpa_range])[0]
+            marital_encoded = encoders["Marital status"].transform([marital_input])[0]
+            anxiety_encoded = encoders["Do you have Anxiety?"].transform([anxiety_input])[0]
+            panic_encoded = encoders["Do you have Panic attack?"].transform([panic_input])[0]
+            treatment_encoded = encoders[
+                "Did you seek any specialist for a treatment?"
+            ].transform([treatment_input])[0]
+
+            input_data = np.array([[
+                gender_encoded,
+                age,
+                course_encoded,
+                year_encoded,
+                cgpa_encoded,
+                marital_encoded,
+                anxiety_encoded,
+                panic_encoded,
+                treatment_encoded
+            ]])
+
+            input_scaled = scaler.transform(input_data)
+            prediction = model.predict(input_scaled)[0]
+            probability = model.predict_proba(input_scaled)[0][1]
+            risk = probability * 100
+
+            st.divider()
+            st.markdown("### 📋 Your assessment summary")
+            st.write(f"**Student name:** {name.strip() if name.strip() else 'Not provided'}")
+
+            metric1, metric2 = st.columns(2)
+            with metric1:
+                st.metric("Model-estimated probability", f"{risk:.2f}%")
+            with metric2:
+                if risk < 40:
+                    status = "Lower range"
+                elif risk < 70:
+                    status = "Moderate range"
+                else:
+                    status = "Higher range"
+                st.metric("Project risk category", status)
+
+            if prediction == 1:
+                st.warning(
+                    "The model classified this response as the positive "
+                    "depression class in the training dataset."
+                )
+            else:
+                st.success(
+                    "The model classified this response as the negative "
+                    "depression class in the training dataset."
+                )
+
+            st.markdown("### 🌱 General wellness suggestions")
+            st.markdown("""
+            - Try to maintain a regular sleep routine.
+            - Take short breaks during long study sessions.
+            - Consider relaxation activities such as gentle breathing exercises.
+            - Talk with someone you trust if you are feeling overwhelmed.
+            - If you are concerned about your mental health, consider speaking
+              with a qualified mental-health professional.
+            """)
+
+            st.caption(
+                "Important: This is an educational machine-learning project, "
+                "not a clinical screening tool or medical diagnosis. The model "
+                "output may be inaccurate and should not guide medical decisions."
+            )
+
+        except Exception as error:
+            st.error(
+                "The assessment could not be processed. Please check that the "
+                "selected values match the categories used when the model was trained."
+            )
+            st.caption(f"Technical details: {error}")
+
+# -------------------------------------------------
+# INSIGHTS
+# -------------------------------------------------
+elif page == "Insights":
+    st.markdown("""
+    <div class="hero">
+        <h1>Dataset Insights 📊</h1>
+        <p>Explore the response distributions available in the project dataset.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    required_columns = [
+        "Do you have Depression?",
+        "Do you have Anxiety?"
+    ]
+
+    if all(column in df.columns for column in required_columns):
+        total_rows = len(df)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Dataset records", f"{total_rows}")
+        c2.metric(
+            "Depression responses",
+            f"{df['Do you have Depression?'].notna().sum()}"
+        )
+        c3.metric(
+            "Anxiety responses",
+            f"{df['Do you have Anxiety?'].notna().sum()}"
+        )
+
+        left, right = st.columns(2)
+        with left:
+            st.markdown("### Depression status")
+            depression_count = df["Do you have Depression?"].value_counts()
+            st.bar_chart(depression_count)
+        with right:
+            st.markdown("### Anxiety status")
+            anxiety_count = df["Do you have Anxiety?"].value_counts()
+            st.bar_chart(anxiety_count)
+
+        with st.expander("View dataset preview"):
+            st.dataframe(df.head(10), use_container_width=True)
+    else:
+        st.error("The expected depression/anxiety columns were not found in the CSV.")
+
+# -------------------------------------------------
+# WELLNESS ASSISTANT
+# -------------------------------------------------
+elif page == "Wellness Assistant":
+    st.markdown("""
+    <div class="hero">
+        <h1>Wellness Assistant 💬</h1>
+        <p>Ask for simple general suggestions about stress, sleep or exam pressure.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.info(
+        "This is a keyword-based helper with predefined responses. "
+        "It is not a medical or emergency support service."
+    )
+
+    user_question = st.text_input(
+        "What would you like help with?",
+        placeholder="For example: I feel stressed about exams..."
+    )
+
+    if st.button("Get suggestion"):
+        if not user_question.strip():
+            st.warning("Please type a question first.")
+        else:
+            question = user_question.lower()
+
+            if "stress" in question or "anxious" in question or "anxiety" in question:
+                answer = (
+                    "Try taking a few slow breaths, divide your tasks into "
+                    "small steps, and take short breaks. If these feelings "
+                    "continue or feel difficult to manage, consider talking "
+                    "with someone you trust or a qualified professional."
+                )
+            elif "sleep" in question or "tired" in question:
+                answer = (
+                    "A consistent sleep and wake-up time may help. Try reducing "
+                    "screen use before bedtime and give yourself time to relax."
+                )
+            elif "exam" in question or "study" in question or "pressure" in question:
+                answer = (
+                    "Make a realistic study plan, focus on one topic at a time, "
+                    "and include short breaks. You do not need to finish everything "
+                    "at once."
+                )
+            else:
+                answer = (
+                    "Take a moment to pause and look after yourself. Writing down "
+                    "what is bothering you or speaking with a trusted person may help."
+                )
+
+            st.success(answer)
+
+    st.caption(
+        "If you may be in immediate danger or need urgent help, contact local "
+        "emergency services or a trusted person nearby."
+    )
+
+# -------------------------------------------------
+# ABOUT
+# -------------------------------------------------
+elif page == "About":
+    st.markdown("""
+    <div class="hero">
+        <h1>About MindCare ℹ️</h1>
+        <p>Student Mental Health Agent — a machine-learning based academic project.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("### Project objective")
+    st.write(
+        "The project explores how student-related information and selected "
+        "mental-health questionnaire responses can be processed by a trained "
+        "machine-learning model to produce a depression-class prediction."
+    )
+
+    st.markdown("### Main components")
+    st.markdown("""
+    - Student information and assessment form
+    - Existing trained machine-learning model
+    - Data scaling and label encoding
+    - Dataset visualizations for depression and anxiety responses
+    - Keyword-based wellness suggestion assistant
+    """)
+
+    st.markdown("### Technologies used")
+    st.markdown("**Python · Streamlit · Pandas · NumPy · Scikit-learn · Joblib**")
+
+    st.warning(
+        "This project is intended for educational awareness and demonstration. "
+        "It does not diagnose depression, replace professional assessment, "
+        "or provide medical advice."
+    )
+
+# -------------------------------------------------
+# FOOTER
+# -------------------------------------------------
+st.markdown(
+    '<div class="footer">MindCare · Student Mental Wellness Project</div>',
+    unsafe_allow_html=True
+)
