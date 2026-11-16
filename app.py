@@ -179,6 +179,31 @@ st.markdown("""
         padding: 18px 0 8px 0;
         font-size: 0.85rem;
     }
+
+    /* Consistent readable text for form controls and dark-theme overrides. */
+    [data-testid="stAppViewContainer"] h1,
+    [data-testid="stAppViewContainer"] h2,
+    [data-testid="stAppViewContainer"] h3,
+    [data-testid="stAppViewContainer"] label,
+    [data-testid="stAppViewContainer"] [data-testid="stMarkdownContainer"] {
+        color: #30265f !important;
+    }
+    [data-testid="stTextInput"] input,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stSelectbox"] div,
+    [data-testid="stSelectSlider"] div {
+        color: #30265f !important;
+    }
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        border-color: #cfc7ed !important;
+    }
+    [data-testid="stForm"] {
+        background: rgba(255,255,255,0.72);
+        border: 1px solid #e3def5;
+        border-radius: 18px;
+        padding: 18px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -233,17 +258,31 @@ if page == "Home":
 elif page == "Assessment":
     st.markdown("""
     <div class="hero">
-        <h1>Student Assessment 📝</h1>
-        <p>Enter the details below. Complete all fields before submitting.</p>
+        <h1>Student Wellness Check-in 🌿</h1>
+        <p>A private moment to reflect on how you have been feeling lately.
+        Answer honestly; there are no right or wrong answers.</p>
     </div>
     """, unsafe_allow_html=True)
 
+    st.info(
+        "This check-in offers general self-care ideas. It does not diagnose a "
+        "condition or calculate a clinical mental-health risk. Your reflection "
+        "answers are separate from the original machine-learning model inputs."
+    )
+
+    frequency_options = [
+        "Never", "A few days", "More than a week", "Nearly every day"
+    ]
+    support_options = [
+        "Yes, definitely", "Sometimes", "Not at the moment"
+    ]
+
     with st.form("mental_health_assessment"):
-        st.markdown("### 👤 Personal information")
+        st.markdown("### 👤 Student information")
         col1, col2 = st.columns(2)
 
         with col1:
-            name = st.text_input("Full Name")
+            name = st.text_input("Name (optional)")
             gender_input = st.selectbox("Gender", ["Male", "Female"])
             age = st.number_input("Age", min_value=17, max_value=35, value=20)
             course_input = st.selectbox(
@@ -257,40 +296,76 @@ elif page == "Assessment":
 
         with col2:
             year_input = st.selectbox(
-                "Current Year",
-                ["year 1", "year 2", "year 3", "year 4"]
+                "Current Year", ["year 1", "year 2", "year 3", "year 4"]
             )
             cgpa_input = st.number_input(
-                "CGPA (10 Point Scale)",
-                min_value=0.0,
-                max_value=10.0,
-                value=8.0,
-                step=0.1
+                "CGPA (10 Point Scale)", min_value=0.0,
+                max_value=10.0, value=8.0, step=0.1
             )
             marital_input = st.selectbox("Marital Status", ["No", "Yes"])
 
         st.divider()
-        st.markdown("### 🩺 Mental health questions")
+        st.markdown("### 🧠 Existing project questionnaire")
+        st.caption(
+            "These are the original questionnaire fields used by the trained "
+            "model. They are retained to preserve the project's ML pipeline."
+        )
         col3, col4 = st.columns(2)
-
         with col3:
             anxiety_input = st.selectbox("Do you have Anxiety?", ["No", "Yes"])
-
         with col4:
             panic_input = st.selectbox("Do you have Panic Attack?", ["No", "Yes"])
-
         treatment_input = st.selectbox(
-            "Did you seek any specialist for treatment?",
-            ["No", "Yes"]
+            "Did you seek any specialist for treatment?", ["No", "Yes"]
         )
 
-        submitted = st.form_submit_button("🔍 Analyze My Assessment")
+        st.divider()
+        st.markdown("### 💜 Your wellness reflection")
+        st.caption(
+            "Think about the last two weeks. These additional questions are "
+            "used only to tailor the general suggestions shown below; they "
+            "are not inputs to the pre-trained model."
+        )
+
+        stress = st.select_slider(
+            "How often have you felt stressed or overwhelmed?",
+            options=frequency_options, value="A few days"
+        )
+        low_mood = st.select_slider(
+            "How often have you felt low, sad or emotionally drained?",
+            options=frequency_options, value="A few days"
+        )
+        focus = st.select_slider(
+            "How often has it been difficult to concentrate on your studies or daily tasks?",
+            options=frequency_options, value="A few days"
+        )
+        sleep = st.select_slider(
+            "How has your sleep been?",
+            options=["Very restful", "Mostly okay", "Often disturbed", "Very difficult"],
+            value="Mostly okay"
+        )
+        energy = st.select_slider(
+            "How often have you felt too tired to do your usual activities?",
+            options=frequency_options, value="A few days"
+        )
+        support = st.selectbox(
+            "Do you have someone you feel comfortable talking to?",
+            support_options
+        )
+        enjoyable = st.selectbox(
+            "Have you made time for an activity you enjoy recently?",
+            ["Yes, regularly", "Sometimes", "Hardly / not yet"]
+        )
+
+        submitted = st.form_submit_button("🌱 Create My Wellness Summary")
 
     if submitted:
         try:
-            # Keep the original project's CGPA conversion and encoding logic.
+            # Preserve the original trained model's preprocessing pipeline.
+            # The prediction is intentionally not displayed as a diagnosis,
+            # probability, or risk category. Wellness suggestions below are
+            # based only on the separate reflection answers.
             gpa = (cgpa_input / 10) * 4
-
             if gpa < 2.0:
                 cgpa_range = "0 - 1.99"
             elif gpa < 2.5:
@@ -314,69 +389,118 @@ elif page == "Assessment":
             ].transform([treatment_input])[0]
 
             input_data = np.array([[
-                gender_encoded,
-                age,
-                course_encoded,
-                year_encoded,
-                cgpa_encoded,
-                marital_encoded,
-                anxiety_encoded,
-                panic_encoded,
-                treatment_encoded
+                gender_encoded, age, course_encoded, year_encoded,
+                cgpa_encoded, marital_encoded, anxiety_encoded,
+                panic_encoded, treatment_encoded
             ]])
-
             input_scaled = scaler.transform(input_data)
-            prediction = model.predict(input_scaled)[0]
-            probability = model.predict_proba(input_scaled)[0][1]
-            risk = probability * 100
+            _model_output = model.predict(input_scaled)[0]
 
             st.divider()
-            st.markdown("### 📋 Your assessment summary")
-            st.write(f"**Student name:** {name.strip() if name.strip() else 'Not provided'}")
+            st.markdown("### 🌷 Your wellness summary")
+            display_name = name.strip() if name.strip() else "there"
+            st.markdown(f"#### You’ve got this, {display_name}.")
+            st.write(
+                "Thank you for checking in. Your answers can help you notice "
+                "what has been feeling difficult and choose one small, "
+                "manageable step. You do not have to change everything at once."
+            )
 
-            metric1, metric2 = st.columns(2)
-            with metric1:
-                st.metric("Model-estimated probability", f"{risk:.2f}%")
-            with metric2:
-                if risk < 40:
-                    status = "Lower range"
-                elif risk < 70:
-                    status = "Moderate range"
-                else:
-                    status = "Higher range"
-                st.metric("Project risk category", status)
+            suggestions = []
+            if stress in ["More than a week", "Nearly every day"]:
+                suggestions.append((
+                    "Manage stress in smaller steps",
+                    "Write down the tasks on your mind, choose just one priority, "
+                    "and work on it for 20–25 minutes before taking a short break."
+                ))
+            elif stress == "A few days":
+                suggestions.append((
+                    "Make space for short breaks",
+                    "Try a brief walk, gentle stretching, or a few slow breaths "
+                    "between study sessions."
+                ))
 
-            if prediction == 1:
-                st.warning(
-                    "The model classified this response as the positive "
-                    "depression class in the training dataset."
+            if low_mood in ["More than a week", "Nearly every day"]:
+                suggestions.append((
+                    "Stay connected",
+                    "Consider telling a trusted friend, family member, mentor, "
+                    "or counsellor how you have been feeling. You deserve support."
+                ))
+            if focus in ["More than a week", "Nearly every day"]:
+                suggestions.append((
+                    "Make studying easier to start",
+                    "Choose one small task, keep your phone away for a short "
+                    "focus session, and allow yourself to pause when needed."
+                ))
+            if sleep in ["Often disturbed", "Very difficult"]:
+                suggestions.append((
+                    "Support your sleep routine",
+                    "Aim for a consistent sleep and wake time. Reduce stimulating "
+                    "screen use before bed and create a calm wind-down routine."
+                ))
+            if energy in ["More than a week", "Nearly every day"]:
+                suggestions.append((
+                    "Look after your basic needs",
+                    "Try regular meals, water, gentle movement and rest. If tiredness "
+                    "continues or affects daily life, consider speaking with a health professional."
+                ))
+            if support == "Not at the moment":
+                suggestions.append((
+                    "Find one safe person to reach out to",
+                    "If possible, start with someone you trust, a college mentor, "
+                    "student-support service or counsellor. You do not need perfect words."
+                ))
+            elif support == "Sometimes":
+                suggestions.append((
+                    "Keep your support network close",
+                    "Think of one person you could contact when you need someone to listen."
+                ))
+            if enjoyable == "Hardly / not yet":
+                suggestions.append((
+                    "Make room for something enjoyable",
+                    "Set aside 10–15 minutes for music, drawing, a hobby, a walk, "
+                    "or another activity that feels pleasant to you."
+                ))
+            elif enjoyable == "Sometimes":
+                suggestions.append((
+                    "Protect a little personal time",
+                    "Try scheduling one small enjoyable activity this week, "
+                    "just as you would schedule a class or study session."
+                ))
+
+            if not suggestions:
+                suggestions.append((
+                    "Keep building healthy routines",
+                    "Continue making time for rest, supportive people, movement "
+                    "and activities you enjoy. Small habits can make a difference."
+                ))
+
+            st.markdown("### 🌱 Suggestions based on your answers")
+            for heading, detail in suggestions:
+                st.markdown(
+                    f'<div class="soft-card"><h3>{heading}</h3><p>{detail}</p></div>',
+                    unsafe_allow_html=True
                 )
-            else:
-                st.success(
-                    "The model classified this response as the negative "
-                    "depression class in the training dataset."
-                )
 
-            st.markdown("### 🌱 General wellness suggestions")
-            st.markdown("""
-            - Try to maintain a regular sleep routine.
-            - Take short breaks during long study sessions.
-            - Consider relaxation activities such as gentle breathing exercises.
-            - Talk with someone you trust if you are feeling overwhelmed.
-            - If you are concerned about your mental health, consider speaking
-              with a qualified mental-health professional.
-            """)
-
+            st.markdown("### 💙 A gentle reminder")
+            st.write(
+                "Your feelings matter, and asking for support is a positive step. "
+                "If these difficulties persist, become overwhelming, or affect "
+                "your daily life, consider speaking with a qualified mental-health "
+                "professional or your college counselling service."
+            )
             st.caption(
-                "Important: This is an educational machine-learning project, "
-                "not a clinical screening tool or medical diagnosis. The model "
-                "output may be inaccurate and should not guide medical decisions."
+                "Privacy note: This app displays suggestions from the answers "
+                "you submit in this session. This is an educational wellness "
+                "reflection, not a diagnosis, clinical screening, or substitute "
+                "for professional care. If you are in immediate danger, contact "
+                "local emergency services or a trusted person nearby."
             )
 
         except Exception as error:
             st.error(
-                "The assessment could not be processed. Please check that the "
-                "selected values match the categories used when the model was trained."
+                "The check-in could not be processed. Please verify that the "
+                "original model files and their trained categories are present."
             )
             st.caption(f"Technical details: {error}")
 
