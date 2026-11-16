@@ -78,6 +78,25 @@ st.markdown("""
         color: #39335f !important;
     }
 
+    /* High-contrast info banner: readable text on a soft blue-lavender surface. */
+    [data-testid="stAlert"] {
+        background: linear-gradient(100deg, #e9e4ff 0%, #e3f1ff 100%) !important;
+        border: 1px solid #c9d7ff !important;
+        border-left: 5px solid #7561c9 !important;
+        border-radius: 14px !important;
+    }
+    [data-testid="stAlert"] p,
+    [data-testid="stAlert"] div,
+    [data-testid="stAlert"] span {
+        color: #25345f !important;
+        font-weight: 600 !important;
+    }
+
+    /* Give navigation controls a matching lavender accent. */
+    [data-testid="stSidebar"] input[type="radio"] {
+        accent-color: #7561c9 !important;
+    }
+
     [data-testid="stSidebar"] {
         background: #f0edff;
         border-right: 1px solid #e5defd;
@@ -111,8 +130,9 @@ st.markdown("""
     }
 
     .soft-card {
-        background: rgba(255,255,255,0.88);
-        border: 1px solid #e8e4f7;
+        background: rgba(255,255,255,0.94);
+        border: 1px solid #e1dcf7;
+        border-top: 4px solid #8b78d6;
         border-radius: 18px;
         padding: 20px 22px;
         box-shadow: 0 5px 18px rgba(66, 54, 120, 0.05);
