@@ -530,43 +530,115 @@ elif page == "Assessment":
 elif page == "Insights":
     st.markdown("""
     <div class="hero">
-        <h1>Dataset Insights 📊</h1>
-        <p>Explore the response distributions available in the project dataset.</p>
+        <h1>Student Wellness Analytics 📊</h1>
+        <p>Explore patterns in the student survey dataset through clear charts and simple observations.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    required_columns = [
-        "Do you have Depression?",
-        "Do you have Anxiety?"
-    ]
+    # These are survey responses, not clinical diagnoses.
+    depression_col = "Do you have Depression?"
+    anxiety_col = "Do you have Anxiety?"
+    panic_col = "Do you have Panic attack?"
 
-    if all(column in df.columns for column in required_columns):
-        total_rows = len(df)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Dataset records", f"{total_rows}")
-        c2.metric(
-            "Depression responses",
-            f"{df['Do you have Depression?'].notna().sum()}"
-        )
-        c3.metric(
-            "Anxiety responses",
-            f"{df['Do you have Anxiety?'].notna().sum()}"
-        )
-
-        left, right = st.columns(2)
-        with left:
-            st.markdown("### Depression status")
-            depression_count = df["Do you have Depression?"].value_counts()
-            st.bar_chart(depression_count)
-        with right:
-            st.markdown("### Anxiety status")
-            anxiety_count = df["Do you have Anxiety?"].value_counts()
-            st.bar_chart(anxiety_count)
-
-        with st.expander("View dataset preview"):
-            st.dataframe(df.head(10), use_container_width=True)
+    if df.empty:
+        st.warning("The dataset is currently empty, so insights cannot be displayed.")
+    elif depression_col not in df.columns or anxiety_col not in df.columns:
+        st.error("The expected depression and anxiety columns were not found in the CSV.")
+        st.caption("Available columns: " + ", ".join(map(str, df.columns)))
     else:
-        st.error("The expected depression/anxiety columns were not found in the CSV.")
+        st.markdown("### At a glance")
+        total_students = len(df)
+
+        def yes_count(column):
+            if column not in df.columns:
+                return None
+            values = df[column].dropna().astype(str).str.strip().str.lower()
+            return int(values.isin(["yes", "y", "true", "1"]).sum())
+
+        dep_yes = yes_count(depression_col)
+        anx_yes = yes_count(anxiety_col)
+        panic_yes = yes_count(panic_col)
+
+        def percent_text(count):
+            return "—" if count is None or total_students == 0 else f"{count / total_students * 100:.1f}%"
+
+        k1, k2, k3, k4 = st.columns(4)
+        k1.metric("Survey responses", f"{total_students:,}")
+        k2.metric("Depression – Yes", percent_text(dep_yes), f"{dep_yes:,} students" if dep_yes is not None else "Column unavailable")
+        k3.metric("Anxiety – Yes", percent_text(anx_yes), f"{anx_yes:,} students" if anx_yes is not None else "Column unavailable")
+        k4.metric("Panic attack – Yes", percent_text(panic_yes), f"{panic_yes:,} students" if panic_yes is not None else "Column unavailable")
+
+        st.info("These figures describe responses in this dataset only. They do not diagnose any student or establish the cause of a mental-health concern.")
+
+        st.markdown("### Explore response patterns")
+        chart_left, chart_right = st.columns(2)
+        with chart_left:
+            st.markdown("#### Depression responses")
+            dep_dist = df[depression_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+            st.bar_chart(dep_dist, use_container_width=True)
+        with chart_right:
+            st.markdown("#### Anxiety responses")
+            anx_dist = df[anxiety_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+            st.bar_chart(anx_dist, use_container_width=True)
+
+        if panic_col in df.columns:
+            st.markdown("#### Panic attack responses")
+            panic_dist = df[panic_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+            st.bar_chart(panic_dist, use_container_width=True)
+
+        # Demographic / academic breakdowns are displayed only when the source columns exist.
+        st.markdown("### Student profile")
+        profile_columns = {
+            "Gender": "Choose your gender",
+            "Course": "What is your course?",
+            "Year of study": "Your current year of Study",
+            "Age": "Age",
+        }
+        available_profiles = [(label, col) for label, col in profile_columns.items() if col in df.columns]
+        if available_profiles:
+            profile_cols = st.columns(min(2, len(available_profiles)))
+            for index, (label, col) in enumerate(available_profiles):
+                with profile_cols[index % len(profile_cols)]:
+                    st.markdown(f"#### {label} distribution")
+                    counts = df[col].fillna("Not answered").astype(str).value_counts().head(10)
+                    chart_df = counts.rename_axis(label).to_frame("Students")
+                    st.bar_chart(chart_df, use_container_width=True)
+        else:
+            st.caption("The dataset does not contain the expected student profile columns, so this section is unavailable.")
+
+        st.markdown("### Key observations")
+        observations = []
+        for label, count in [("Depression", dep_yes), ("Anxiety", anx_yes), ("Panic attack", panic_yes)]:
+            if count is not None:
+                observations.append((label, count, count / total_students * 100 if total_students else 0))
+        if observations:
+            highest = max(observations, key=lambda item: item[2])
+            lowest = min(observations, key=lambda item: item[2])
+            st.markdown(f"- **Most frequently reported among these items:** {highest[0]} ({highest[2]:.1f}% of all dataset rows).")
+            st.markdown(f"- **Lowest reported among these items:** {lowest[0]} ({lowest[2]:.1f}% of all dataset rows).")
+            st.markdown(f"- **Records analysed:** {total_students:,}. Percentages use all dataset rows as the denominator.")
+        else:
+            st.caption("No Yes/No response values were available to generate observations.")
+
+        st.markdown("### Explore the dataset")
+        with st.expander("Filter and view survey records", expanded=False):
+            filtered_df = df.copy()
+            filter_options = [
+                ("Gender", "Choose your gender"),
+                ("Course", "What is your course?"),
+                ("Year of study", "Your current year of Study"),
+            ]
+            filter_cols = st.columns(len(filter_options))
+            for index, (label, column) in enumerate(filter_options):
+                if column in filtered_df.columns:
+                    options = sorted(filtered_df[column].dropna().astype(str).unique().tolist())
+                    with filter_cols[index]:
+                        selected = st.multiselect(f"Filter by {label}", options, default=options, key=f"insights_{label}")
+                    filtered_df = filtered_df[filtered_df[column].astype(str).isin(selected)]
+            st.caption(f"Showing {len(filtered_df):,} of {len(df):,} records")
+            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
+            csv_data = filtered_df.to_csv(index=False).encode("utf-8")
+            st.download_button("Download filtered data (CSV)", data=csv_data, file_name="mindcare_filtered_dataset.csv", mime="text/csv")
 
 # -------------------------------------------------
 # WELLNESS ASSISTANT
