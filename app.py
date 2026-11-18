@@ -431,6 +431,69 @@ elif page == "Assessment":
                 "manageable step. You do not have to change everything at once."
             )
 
+            # A fuller, plain-language reflection. This is not a clinical score.
+            st.markdown("### 🪷 Your personal reflection")
+            reflection_items = [
+                ("Stress", stress), ("Mood", low_mood),
+                ("Concentration", focus), ("Sleep", sleep),
+                ("Energy", energy), ("Social support", support),
+                ("Enjoyable activities", enjoyable),
+            ]
+            reflection_df = pd.DataFrame(reflection_items, columns=["Area", "Your response"])
+            st.dataframe(reflection_df, use_container_width=True, hide_index=True)
+
+            attention = []
+            strengths = []
+            if stress == "Never":
+                strengths.append("You reported that stress has not been frequent recently.")
+            elif stress in ["More than a week", "Nearly every day"]:
+                attention.append("Stress has been showing up often. Try breaking responsibilities into smaller steps and making room for recovery time.")
+            if low_mood in ["More than a week", "Nearly every day"]:
+                attention.append("You reported feeling low or emotionally drained often. Consider sharing this with someone you trust or a qualified counsellor.")
+            elif low_mood == "Never":
+                strengths.append("You reported that low mood has not been frequent during this check-in period.")
+            if focus in ["More than a week", "Nearly every day"]:
+                attention.append("Concentration has felt difficult often. Try one short task at a time, reduce distractions, and take planned breaks.")
+            if sleep in ["Often disturbed", "Very difficult"]:
+                attention.append("Sleep has been difficult. A steady bedtime routine and reduced screen use before bed may help.")
+            elif sleep == "Very restful":
+                strengths.append("You reported that your sleep has been restful. Try to protect the routine that is working for you.")
+            if energy in ["More than a week", "Nearly every day"]:
+                attention.append("Low energy has been frequent. Pay attention to rest, regular meals and hydration; seek professional advice if it continues.")
+            if support == "Yes, definitely":
+                strengths.append("You have someone you feel comfortable talking to. Staying connected is a valuable support habit.")
+            elif support == "Not at the moment":
+                attention.append("You may not currently feel you have someone to talk to. A trusted friend, family member, faculty mentor or college counsellor could be a starting point.")
+            if enjoyable == "Yes, regularly":
+                strengths.append("You are making time for enjoyable activities. Keep protecting some personal time in your routine.")
+            elif enjoyable == "Hardly / not yet":
+                attention.append("You have had little time for enjoyable activities. Try setting aside 10–15 minutes for something you like.")
+
+            left, right = st.columns(2)
+            with left:
+                st.markdown("#### 🌟 Things you can build on")
+                if strengths:
+                    for item in strengths:
+                        st.markdown(f"- {item}")
+                else:
+                    st.write("Your check-in does not highlight a clear strength in these selected areas yet. That is okay; small habits can be built gradually.")
+            with right:
+                st.markdown("#### 💜 Areas that may need care")
+                if attention:
+                    for item in attention:
+                        st.markdown(f"- {item}")
+                else:
+                    st.write("Your selected answers do not point to a frequent difficulty in these areas right now. Keep checking in with yourself.")
+
+            st.markdown("#### 🗓️ A simple 3-step plan for this week")
+            action_plan = [
+                "Choose one manageable study or personal task each morning.",
+                "Take at least one short break away from your screen during study time.",
+                "Connect with someone supportive or spend a little time on an activity you enjoy.",
+            ]
+            for step_no, step in enumerate(action_plan, start=1):
+                st.markdown(f"**Step {step_no}.** {step}")
+
             suggestions = []
             if stress in ["More than a week", "Nearly every day"]:
                 suggestions.append((
@@ -551,68 +614,123 @@ elif page == "Assessment":
 elif page == "Insights":
     st.markdown("""
     <div class="hero">
-        <h1>My Wellness Insights 💜</h1>
-        <p>A personal space to review your check-ins, notice patterns and find small steps that may support your wellbeing.</p>
+        <h1>Wellness Insights 📊</h1>
+        <p>View your personal check-in history and explore overall patterns in the original student survey dataset.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    history = st.session_state.get("wellness_history", [])
-    if not history:
-        st.markdown("""
-        <div class="soft-card">
-            <h3>🌱 Your personal insights will appear here</h3>
-            <p>Complete the Wellness Assessment first. Your answers and suggestions will then appear on this page during your current browser session.</p>
-        </div>
-        """, unsafe_allow_html=True)
-        st.caption("Open **Assessment** from the sidebar to complete your first check-in.")
-        st.info("Your check-in is personal to this browser session. It is not shared with the overall dataset analytics.")
-    else:
-        latest = history[-1]
-        st.caption(f"Latest check-in: {latest['date']}  ·  Student: {latest['name']}")
+    personal_tab, overall_tab = st.tabs(["👤 Individual Insights", "🌍 Overall Dataset Insights"])
 
-        st.markdown("### 🌷 Your latest check-in")
-        metric_cols = st.columns(3)
-        metric_cols[0].metric("Stress", latest["stress"])
-        metric_cols[1].metric("Sleep", latest["sleep"])
-        metric_cols[2].metric("Energy", latest["energy"])
+    with personal_tab:
+        st.markdown("### Your personal wellness overview")
+        history = st.session_state.get("wellness_history", [])
+        if not history:
+            st.markdown("""
+            <div class="soft-card">
+                <h3>🌱 Your personal insights will appear here</h3>
+                <p>Complete the Assessment to see your responses, tailored suggestions and check-in history here.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            st.caption("Your personal answers are kept only in this active app session. They are not added to the shared dataset charts.")
+        else:
+            latest = history[-1]
+            st.caption(f"Latest check-in: {latest['date']} · Student: {latest['name']}")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Stress", latest["stress"])
+            m2.metric("Mood", latest["mood"])
+            m3.metric("Sleep", latest["sleep"])
+            m4.metric("Energy", latest["energy"])
 
-        st.markdown("### 💭 Your reflection at a glance")
-        reflection = pd.DataFrame({
-            "Area": ["Low mood", "Concentration", "Sleep", "Energy", "Social support", "Enjoyable activities"],
-            "Your response": [latest["mood"], latest["focus"], latest["sleep"], latest["energy"], latest["support"], latest["enjoyable"]],
-        })
-        st.dataframe(reflection, use_container_width=True, hide_index=True)
-
-        st.markdown("### 🌱 Suggestions picked for you")
-        for heading, detail in latest["suggestions"]:
-            st.markdown(
-                f'<div class="soft-card"><h3>{heading}</h3><p>{detail}</p></div>',
-                unsafe_allow_html=True
-            )
-
-        st.markdown("### 📅 Your check-in history")
-        history_rows = []
-        for item in reversed(history):
-            history_rows.append({
-                "Date": item["date"],
-                "Stress": item["stress"],
-                "Mood": item["mood"],
-                "Sleep": item["sleep"],
-                "Energy": item["energy"],
+            st.markdown("#### Your latest reflection")
+            reflection = pd.DataFrame({
+                "Area": ["Stress", "Low mood", "Concentration", "Sleep", "Energy", "Social support", "Enjoyable activities"],
+                "Your response": [latest["stress"], latest["mood"], latest["focus"], latest["sleep"], latest["energy"], latest["support"], latest["enjoyable"]],
             })
-        st.dataframe(pd.DataFrame(history_rows), use_container_width=True, hide_index=True)
+            st.dataframe(reflection, use_container_width=True, hide_index=True)
 
-        if len(history) >= 2:
-            st.markdown("### 📈 Compare your recent check-ins")
-            trend = pd.DataFrame([
-                {"Check-in": f"Check-in {i + 1}", "Stress frequency": ["Never", "A few days", "More than a week", "Nearly every day"].index(item["stress"])}
-                for i, item in enumerate(history)
-            ])
-            st.line_chart(trend.set_index("Check-in"), y="Stress frequency", use_container_width=True)
-            st.caption("The chart shows only how your selected stress-frequency response changed across your check-ins. It is not a clinical score.")
+            st.markdown("#### Suggestions selected for you")
+            for heading, detail in latest["suggestions"]:
+                st.markdown(f'<div class="soft-card"><h3>{heading}</h3><p>{detail}</p></div>', unsafe_allow_html=True)
 
-        st.info("These insights are based only on the answers you entered in your own check-ins. They are for personal reflection, not diagnosis or clinical assessment.")
-        st.caption("Privacy note: In this version, your history is stored temporarily in the active Streamlit session. It may be cleared when the session ends or the app restarts. Do not enter highly sensitive personal details.")
+            st.markdown("#### Your check-in history")
+            history_rows = [{
+                "Check-in": f"Check-in {i + 1}", "Date": item["date"],
+                "Stress": item["stress"], "Mood": item["mood"],
+                "Sleep": item["sleep"], "Energy": item["energy"],
+            } for i, item in enumerate(history)]
+            st.dataframe(pd.DataFrame(history_rows[::-1]), use_container_width=True, hide_index=True)
+            if len(history) >= 2:
+                scale = ["Never", "A few days", "More than a week", "Nearly every day"]
+                trend = pd.DataFrame({
+                    "Check-in": [f"Check-in {i + 1}" for i in range(len(history))],
+                    "Stress frequency (response order)": [scale.index(item["stress"]) for item in history],
+                    "Low-mood frequency (response order)": [scale.index(item["mood"]) for item in history],
+                }).set_index("Check-in")
+                st.markdown("#### Changes across your check-ins")
+                st.line_chart(trend, use_container_width=True)
+                st.caption("The chart displays the order of your selected response options, not a medical or clinical score.")
+            st.info("Your personal insights are visible only in this active session. They may be cleared when the session ends or the app restarts.")
+
+    with overall_tab:
+        st.markdown("### Overall student survey patterns")
+        st.caption("These charts use the original CSV dataset included with the project. They do not include the private check-ins entered by app users.")
+        depression_col = "Do you have Depression?"
+        anxiety_col = "Do you have Anxiety?"
+        panic_col = "Do you have Panic attack?"
+
+        if df.empty:
+            st.warning("The dataset is empty, so overall insights cannot be displayed.")
+        elif depression_col not in df.columns or anxiety_col not in df.columns:
+            st.error("The expected depression and anxiety columns were not found in the CSV.")
+            st.caption("Available columns: " + ", ".join(map(str, df.columns)))
+        else:
+            total_students = len(df)
+            def yes_count(column):
+                if column not in df.columns:
+                    return None
+                values = df[column].dropna().astype(str).str.strip().str.lower()
+                return int(values.isin(["yes", "y", "true", "1"]).sum())
+            def pct(count):
+                return "—" if count is None or total_students == 0 else f"{count / total_students * 100:.1f}%"
+
+            dep_yes, anx_yes, panic_yes = yes_count(depression_col), yes_count(anxiety_col), yes_count(panic_col)
+            st.markdown("#### Dataset at a glance")
+            a, b, c, d = st.columns(4)
+            a.metric("Survey records", f"{total_students:,}")
+            b.metric("Depression – Yes", pct(dep_yes))
+            c.metric("Anxiety – Yes", pct(anx_yes))
+            d.metric("Panic attack – Yes", pct(panic_yes))
+            st.info("These are self-reported survey responses in the source dataset. They are not diagnoses and should not be interpreted as the prevalence of a clinical condition.")
+
+            st.markdown("#### Response distributions")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown("**Depression responses**")
+                dep_dist = df[depression_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+                st.bar_chart(dep_dist, use_container_width=True)
+            with c2:
+                st.markdown("**Anxiety responses**")
+                anx_dist = df[anxiety_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+                st.bar_chart(anx_dist, use_container_width=True)
+            if panic_col in df.columns:
+                st.markdown("**Panic attack responses**")
+                panic_dist = df[panic_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
+                st.bar_chart(panic_dist, use_container_width=True)
+
+            st.markdown("#### Student profile distributions")
+            profile_columns = {
+                "Gender": "Choose your gender", "Course": "What is your course?",
+                "Year of study": "Your current year of Study", "Age": "Age",
+            }
+            available = [(label, col) for label, col in profile_columns.items() if col in df.columns]
+            if available:
+                profile_cols = st.columns(2)
+                for idx, (label, col) in enumerate(available):
+                    with profile_cols[idx % 2]:
+                        st.markdown(f"**{label}**")
+                        counts = df[col].fillna("Not answered").astype(str).value_counts().head(10).rename_axis(label).to_frame("Students")
+                        st.bar_chart(counts, use_container_width=True)
+            st.caption("Only aggregate counts and distributions are shown here. Individual source-dataset rows are not displayed or downloadable from this page.")
 
 # -------------------------------------------------
 # WELLNESS ASSISTANT
