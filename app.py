@@ -204,6 +204,27 @@ st.markdown("""
         border-radius: 18px;
         padding: 18px;
     }
+    /* AGE AND CGPA: dark field with white typed values for clear contrast */
+    [data-testid="stNumberInput"] div[data-baseweb="input"],
+    [data-testid="stNumberInput"] div[data-baseweb="input"] input {
+        background-color: #30265F !important;
+    }
+
+    [data-testid="stNumberInput"] input,
+    [data-testid="stNumberInput"] input:focus {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        caret-color: #FFFFFF !important;
+        background-color: #30265F !important;
+        border-color: #7561C9 !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stNumberInput"] button {
+        color: #FFFFFF !important;
+        background-color: #7561C9 !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
