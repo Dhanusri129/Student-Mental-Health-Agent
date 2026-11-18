@@ -738,57 +738,110 @@ elif page == "Insights":
 elif page == "Wellness Assistant":
     st.markdown("""
     <div class="hero">
-        <h1>Wellness Assistant 💬</h1>
-        <p>Ask for simple general suggestions about stress, sleep or exam pressure.</p>
+        <h1>Wellness Assistant 💜</h1>
+        <p>A gentle space to check in with yourself, reset, and find small steps that may help.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.info(
-        "This is a keyword-based helper with predefined responses. "
-        "It is not a medical or emergency support service."
-    )
+    st.markdown("""
+    <style>
+      .wellness-card {background:#ffffff; border:1px solid #e7e2fa; border-radius:18px;
+        padding:20px 22px; margin:8px 0 16px 0; box-shadow:0 5px 18px rgba(65,52,120,.06);}
+      .wellness-card h3 {color:#34266d !important; margin:0 0 8px 0;}
+      .wellness-card p {color:#514b70 !important; margin:0;}
+      .wellness-small {color:#625b7e !important; font-size:.92rem;}
+      .wellness-tag {display:inline-block; background:#f0ecff; color:#44358b !important;
+        padding:5px 10px; border-radius:20px; font-size:.82rem; font-weight:700;}
+    </style>
+    """, unsafe_allow_html=True)
 
-    user_question = st.text_input(
-        "What would you like help with?",
-        placeholder="For example: I feel stressed about exams..."
-    )
+    st.info("This page offers general wellbeing ideas, not a diagnosis or treatment. Choose only activities that feel comfortable for you.")
 
-    if st.button("Get suggestion"):
-        if not user_question.strip():
-            st.warning("Please type a question first.")
+    mood_tab, reset_tab, balance_tab, support_tab = st.tabs([
+        "🌤️ Mood check-in", "🌿 Relaxation corner", "📚 Study-life balance", "💛 Support corner"
+    ])
+
+    with mood_tab:
+        st.markdown("### How are you feeling today?")
+        st.write("There is no right or wrong answer. Pick the option that feels closest to your day.")
+        mood = st.selectbox(
+            "Choose your current mood",
+            ["Select a mood", "Happy / positive", "Motivated", "Stressed / overwhelmed",
+             "Worried / anxious", "Low / sad", "Tired / drained", "Not sure"],
+            key="wellness_mood"
+        )
+        if mood != "Select a mood":
+            mood_guidance = {
+                "Happy / positive": ("Keep a little of this feeling with you", "Notice what helped today. You could write down one good moment or share it with someone you care about."),
+                "Motivated": ("Turn motivation into one manageable step", "Choose one task that matters today, decide when to do it, and remember to take breaks rather than filling every minute."),
+                "Stressed / overwhelmed": ("Make the next step smaller", "Pause for a few slow breaths. Write down what is on your mind, choose just one priority, and ask for help if the load feels too much."),
+                "Worried / anxious": ("Bring your attention back to the present", "Try the 5-4-3-2-1 grounding activity in the Relaxation Corner. If worry keeps affecting daily life, consider speaking with a counsellor or qualified professional."),
+                "Low / sad": ("You do not have to handle everything alone", "Try one gentle activity—getting some fresh air, having a meal, or messaging someone you trust. It is okay to ask for support."),
+                "Tired / drained": ("Give yourself permission to recharge", "Check whether you need water, food, movement, rest, or a break from screens. If tiredness continues, consider discussing it with a health professional."),
+                "Not sure": ("It is okay not to have a clear label", "Take a moment to notice what your body needs right now. You can write freely in the reflection box in the Support Corner.")
+            }
+            heading, suggestion = mood_guidance[mood]
+            st.markdown(f'<div class="wellness-card"><span class="wellness-tag">YOUR CHECK-IN</span><h3>{heading}</h3><p>{suggestion}</p></div>', unsafe_allow_html=True)
+            st.caption("Your mood selection is used only to show this guidance in the current page; it is not a clinical assessment.")
+
+    with reset_tab:
+        st.markdown("### Take a short pause")
+        st.write("Choose a simple exercise. Stop if it feels uncomfortable, and breathe normally whenever you need to.")
+        exercise = st.radio("Choose an activity", ["Calm breathing", "5-4-3-2-1 grounding", "Quick body reset"], horizontal=True)
+        if exercise == "Calm breathing":
+            st.markdown('<div class="wellness-card"><h3>🌬️ Gentle breathing</h3><p>1. Sit comfortably and relax your shoulders.<br>2. Breathe in gently for 4 counts.<br>3. Breathe out slowly for 4 to 6 counts.<br>4. Repeat for about one minute, without forcing your breath.</p></div>', unsafe_allow_html=True)
+            st.caption("If focusing on breathing makes you uncomfortable, try the grounding exercise instead.")
+        elif exercise == "5-4-3-2-1 grounding":
+            st.markdown('<div class="wellness-card"><h3>🌱 Notice what is around you</h3><p>Look around and gently name:<br><b>5</b> things you can see · <b>4</b> things you can feel<br><b>3</b> things you can hear · <b>2</b> things you can smell<br><b>1</b> thing you can taste or one slow breath you notice.</p></div>', unsafe_allow_html=True)
         else:
-            question = user_question.lower()
+            st.markdown('<div class="wellness-card"><h3>🙆 A quick body reset</h3><p>Unclench your jaw, lower your shoulders, stretch your hands, stand up if comfortable, and look away from your screen for a little while. Move gently—never push into pain.</p></div>', unsafe_allow_html=True)
 
-            if "stress" in question or "anxious" in question or "anxiety" in question:
-                answer = (
-                    "Try taking a few slow breaths, divide your tasks into "
-                    "small steps, and take short breaks. If these feelings "
-                    "continue or feel difficult to manage, consider talking "
-                    "with someone you trust or a qualified professional."
-                )
-            elif "sleep" in question or "tired" in question:
-                answer = (
-                    "A consistent sleep and wake-up time may help. Try reducing "
-                    "screen use before bedtime and give yourself time to relax."
-                )
-            elif "exam" in question or "study" in question or "pressure" in question:
-                answer = (
-                    "Make a realistic study plan, focus on one topic at a time, "
-                    "and include short breaks. You do not need to finish everything "
-                    "at once."
-                )
-            else:
-                answer = (
-                    "Take a moment to pause and look after yourself. Writing down "
-                    "what is bothering you or speaking with a trusted person may help."
-                )
+    with balance_tab:
+        st.markdown("### Make study feel more manageable")
+        st.markdown('<div class="wellness-card"><h3>⏳ A simple focus cycle</h3><p>Pick one small task · Focus for 25 minutes · Take a 5-minute break · After four cycles, take a longer break. Adjust the timings to suit your needs.</p></div>', unsafe_allow_html=True)
+        with st.expander("I have too many assignments"):
+            st.write("List everything you need to do, mark what is due soonest, and start with a 10-minute action. If deadlines conflict, contact your lecturer early and explain clearly.")
+        with st.expander("I feel pressure before exams"):
+            st.write("Break revision into topics, practise a few questions, and protect time for meals and sleep. A realistic plan is more useful than an all-night study session.")
+        with st.expander("I keep getting distracted by my phone"):
+            st.write("Place your phone out of reach for one focus session, silence non-essential notifications, and decide in advance when you will check messages.")
+        with st.expander("I am struggling to balance everything"):
+            st.write("Choose your top two priorities for today. Leave some space for rest, family, friends, and activities you enjoy. You do not need to do everything at once.")
 
-            st.success(answer)
+    with support_tab:
+        st.markdown("### A little encouragement")
+        st.markdown('<div class="wellness-card"><h3>💛 A reminder for today</h3><p>Progress does not have to be perfect or fast. Small steps count, and asking for support is a strength.</p></div>', unsafe_allow_html=True)
+        st.markdown("#### Reflection journal")
+        prompt = st.selectbox("Choose a reflection prompt", [
+            "What is one thing taking up my energy today?",
+            "What is one small thing I can do for myself today?",
+            "Who is someone I feel comfortable talking to?",
+            "What is one thing I handled well recently?"
+        ])
+        reflection = st.text_area("Write a few thoughts (optional)", placeholder="This space is for your own reflection...", height=110, key="wellness_reflection")
+        st.caption("Your writing is not sent anywhere by this page. It is not saved as a permanent journal.")
+        if st.button("Show my reflection prompt", key="show_reflection_prompt"):
+            st.success(prompt)
+            if reflection.strip():
+                st.info("Thank you for taking a moment to reflect. Consider one kind, realistic next step for yourself.")
 
-    st.caption(
-        "If you may be in immediate danger or need urgent help, contact local "
-        "emergency services or a trusted person nearby."
-    )
+        st.markdown("#### Today's small wellness challenge")
+        challenges = [
+            "Take a 10-minute walk or stretch gently.",
+            "Drink a glass of water and take a screen break.",
+            "Send a kind message to someone you trust.",
+            "Spend 10 minutes on a hobby you enjoy.",
+            "Prepare a realistic plan for just tomorrow.",
+            "Take a few minutes to tidy or refresh your study space.",
+            "Try to keep a regular bedtime tonight."
+        ]
+        today_challenge = challenges[datetime.now().timetuple().tm_yday % len(challenges)]
+        st.markdown(f'<div class="wellness-card"><span class="wellness-tag">ONE SMALL STEP</span><h3>{today_challenge}</h3><p>Choose it only if it works for you. Small, realistic actions are enough.</p></div>', unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("### When extra support may help")
+    st.write("If difficult feelings persist, become intense, or interfere with sleep, study, relationships, or daily activities, consider reaching out to a trusted person, your college counsellor, or a qualified mental-health professional. If you are in immediate danger or may hurt yourself, contact local emergency services or go to the nearest emergency department, and tell a trusted person nearby now.")
+    st.caption("MindCare is an educational student-wellness project. It does not provide medical advice, diagnosis, counselling, or emergency response.")
 
 # -------------------------------------------------
 # ABOUT
