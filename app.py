@@ -2,6 +2,7 @@ import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
+from datetime import datetime
 
 # -------------------------------------------------
 # PAGE CONFIG
@@ -42,6 +43,10 @@ except Exception as error:
     )
     st.caption(f"Technical details: {error}")
     st.stop()
+
+# Individual wellness data is kept only for the current Streamlit browser session.
+if "wellness_history" not in st.session_state:
+    st.session_state.wellness_history = []
 
 # -------------------------------------------------
 # CUSTOM DESIGN
@@ -495,6 +500,22 @@ elif page == "Assessment":
                     "and activities you enjoy. Small habits can make a difference."
                 ))
 
+            # Save this student's check-in for the My Insights page.
+            checkin = {
+                "date": datetime.now().strftime("%d %b %Y, %I:%M %p"),
+                "name": name.strip() if name.strip() else "Student",
+                "stress": stress,
+                "mood": low_mood,
+                "focus": focus,
+                "sleep": sleep,
+                "energy": energy,
+                "support": support,
+                "enjoyable": enjoyable,
+                "suggestions": suggestions.copy(),
+            }
+            st.session_state.wellness_history.append(checkin)
+            st.session_state.latest_wellness = checkin
+
             st.markdown("### 🌱 Suggestions based on your answers")
             for heading, detail in suggestions:
                 st.markdown(
@@ -530,115 +551,68 @@ elif page == "Assessment":
 elif page == "Insights":
     st.markdown("""
     <div class="hero">
-        <h1>Student Wellness Analytics 📊</h1>
-        <p>Explore patterns in the student survey dataset through clear charts and simple observations.</p>
+        <h1>My Wellness Insights 💜</h1>
+        <p>A personal space to review your check-ins, notice patterns and find small steps that may support your wellbeing.</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # These are survey responses, not clinical diagnoses.
-    depression_col = "Do you have Depression?"
-    anxiety_col = "Do you have Anxiety?"
-    panic_col = "Do you have Panic attack?"
-
-    if df.empty:
-        st.warning("The dataset is currently empty, so insights cannot be displayed.")
-    elif depression_col not in df.columns or anxiety_col not in df.columns:
-        st.error("The expected depression and anxiety columns were not found in the CSV.")
-        st.caption("Available columns: " + ", ".join(map(str, df.columns)))
+    history = st.session_state.get("wellness_history", [])
+    if not history:
+        st.markdown("""
+        <div class="soft-card">
+            <h3>🌱 Your personal insights will appear here</h3>
+            <p>Complete the Wellness Assessment first. Your answers and suggestions will then appear on this page during your current browser session.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        st.caption("Open **Assessment** from the sidebar to complete your first check-in.")
+        st.info("Your check-in is personal to this browser session. It is not shared with the overall dataset analytics.")
     else:
-        st.markdown("### At a glance")
-        total_students = len(df)
+        latest = history[-1]
+        st.caption(f"Latest check-in: {latest['date']}  ·  Student: {latest['name']}")
 
-        def yes_count(column):
-            if column not in df.columns:
-                return None
-            values = df[column].dropna().astype(str).str.strip().str.lower()
-            return int(values.isin(["yes", "y", "true", "1"]).sum())
+        st.markdown("### 🌷 Your latest check-in")
+        metric_cols = st.columns(3)
+        metric_cols[0].metric("Stress", latest["stress"])
+        metric_cols[1].metric("Sleep", latest["sleep"])
+        metric_cols[2].metric("Energy", latest["energy"])
 
-        dep_yes = yes_count(depression_col)
-        anx_yes = yes_count(anxiety_col)
-        panic_yes = yes_count(panic_col)
+        st.markdown("### 💭 Your reflection at a glance")
+        reflection = pd.DataFrame({
+            "Area": ["Low mood", "Concentration", "Sleep", "Energy", "Social support", "Enjoyable activities"],
+            "Your response": [latest["mood"], latest["focus"], latest["sleep"], latest["energy"], latest["support"], latest["enjoyable"]],
+        })
+        st.dataframe(reflection, use_container_width=True, hide_index=True)
 
-        def percent_text(count):
-            return "—" if count is None or total_students == 0 else f"{count / total_students * 100:.1f}%"
+        st.markdown("### 🌱 Suggestions picked for you")
+        for heading, detail in latest["suggestions"]:
+            st.markdown(
+                f'<div class="soft-card"><h3>{heading}</h3><p>{detail}</p></div>',
+                unsafe_allow_html=True
+            )
 
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Survey responses", f"{total_students:,}")
-        k2.metric("Depression – Yes", percent_text(dep_yes), f"{dep_yes:,} students" if dep_yes is not None else "Column unavailable")
-        k3.metric("Anxiety – Yes", percent_text(anx_yes), f"{anx_yes:,} students" if anx_yes is not None else "Column unavailable")
-        k4.metric("Panic attack – Yes", percent_text(panic_yes), f"{panic_yes:,} students" if panic_yes is not None else "Column unavailable")
+        st.markdown("### 📅 Your check-in history")
+        history_rows = []
+        for item in reversed(history):
+            history_rows.append({
+                "Date": item["date"],
+                "Stress": item["stress"],
+                "Mood": item["mood"],
+                "Sleep": item["sleep"],
+                "Energy": item["energy"],
+            })
+        st.dataframe(pd.DataFrame(history_rows), use_container_width=True, hide_index=True)
 
-        st.info("These figures describe responses in this dataset only. They do not diagnose any student or establish the cause of a mental-health concern.")
+        if len(history) >= 2:
+            st.markdown("### 📈 Compare your recent check-ins")
+            trend = pd.DataFrame([
+                {"Check-in": f"Check-in {i + 1}", "Stress frequency": ["Never", "A few days", "More than a week", "Nearly every day"].index(item["stress"])}
+                for i, item in enumerate(history)
+            ])
+            st.line_chart(trend.set_index("Check-in"), y="Stress frequency", use_container_width=True)
+            st.caption("The chart shows only how your selected stress-frequency response changed across your check-ins. It is not a clinical score.")
 
-        st.markdown("### Explore response patterns")
-        chart_left, chart_right = st.columns(2)
-        with chart_left:
-            st.markdown("#### Depression responses")
-            dep_dist = df[depression_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
-            st.bar_chart(dep_dist, use_container_width=True)
-        with chart_right:
-            st.markdown("#### Anxiety responses")
-            anx_dist = df[anxiety_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
-            st.bar_chart(anx_dist, use_container_width=True)
-
-        if panic_col in df.columns:
-            st.markdown("#### Panic attack responses")
-            panic_dist = df[panic_col].fillna("Not answered").astype(str).value_counts().rename_axis("Response").to_frame("Students")
-            st.bar_chart(panic_dist, use_container_width=True)
-
-        # Demographic / academic breakdowns are displayed only when the source columns exist.
-        st.markdown("### Student profile")
-        profile_columns = {
-            "Gender": "Choose your gender",
-            "Course": "What is your course?",
-            "Year of study": "Your current year of Study",
-            "Age": "Age",
-        }
-        available_profiles = [(label, col) for label, col in profile_columns.items() if col in df.columns]
-        if available_profiles:
-            profile_cols = st.columns(min(2, len(available_profiles)))
-            for index, (label, col) in enumerate(available_profiles):
-                with profile_cols[index % len(profile_cols)]:
-                    st.markdown(f"#### {label} distribution")
-                    counts = df[col].fillna("Not answered").astype(str).value_counts().head(10)
-                    chart_df = counts.rename_axis(label).to_frame("Students")
-                    st.bar_chart(chart_df, use_container_width=True)
-        else:
-            st.caption("The dataset does not contain the expected student profile columns, so this section is unavailable.")
-
-        st.markdown("### Key observations")
-        observations = []
-        for label, count in [("Depression", dep_yes), ("Anxiety", anx_yes), ("Panic attack", panic_yes)]:
-            if count is not None:
-                observations.append((label, count, count / total_students * 100 if total_students else 0))
-        if observations:
-            highest = max(observations, key=lambda item: item[2])
-            lowest = min(observations, key=lambda item: item[2])
-            st.markdown(f"- **Most frequently reported among these items:** {highest[0]} ({highest[2]:.1f}% of all dataset rows).")
-            st.markdown(f"- **Lowest reported among these items:** {lowest[0]} ({lowest[2]:.1f}% of all dataset rows).")
-            st.markdown(f"- **Records analysed:** {total_students:,}. Percentages use all dataset rows as the denominator.")
-        else:
-            st.caption("No Yes/No response values were available to generate observations.")
-
-        st.markdown("### Explore the dataset")
-        with st.expander("Filter and view survey records", expanded=False):
-            filtered_df = df.copy()
-            filter_options = [
-                ("Gender", "Choose your gender"),
-                ("Course", "What is your course?"),
-                ("Year of study", "Your current year of Study"),
-            ]
-            filter_cols = st.columns(len(filter_options))
-            for index, (label, column) in enumerate(filter_options):
-                if column in filtered_df.columns:
-                    options = sorted(filtered_df[column].dropna().astype(str).unique().tolist())
-                    with filter_cols[index]:
-                        selected = st.multiselect(f"Filter by {label}", options, default=options, key=f"insights_{label}")
-                    filtered_df = filtered_df[filtered_df[column].astype(str).isin(selected)]
-            st.caption(f"Showing {len(filtered_df):,} of {len(df):,} records")
-            st.dataframe(filtered_df, use_container_width=True, hide_index=True)
-            csv_data = filtered_df.to_csv(index=False).encode("utf-8")
-            st.download_button("Download filtered data (CSV)", data=csv_data, file_name="mindcare_filtered_dataset.csv", mime="text/csv")
+        st.info("These insights are based only on the answers you entered in your own check-ins. They are for personal reflection, not diagnosis or clinical assessment.")
+        st.caption("Privacy note: In this version, your history is stored temporarily in the active Streamlit session. It may be cleared when the session ends or the app restarts. Do not enter highly sensitive personal details.")
 
 # -------------------------------------------------
 # WELLNESS ASSISTANT
